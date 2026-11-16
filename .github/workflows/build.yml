@@ -23,11 +23,17 @@ jobs:
 
     - name: Prepare module package
       run: |
-        mkdir -p module_package
+        mkdir -p module_package/ko
         cp module.prop module_package/
         cp service.sh module_package/
         cp uninstall.sh module_package/
-        find . -name "syscall_shroud.ko" -exec cp {} module_package/ \;
+        
+        echo "=== Finding compiled .ko file ==="
+        find . -name "*.ko" -type f
+        
+        echo "=== Copying .ko to package ==="
+        find . -name "syscall_shroud.ko" -exec cp {} module_package/ko/ \;
+        
         cd module_package
         zip -r ../SyscallShroud.zip *
 
