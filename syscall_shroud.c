@@ -2,7 +2,6 @@
 #include <linux/kernel.h>
 #include <linux/kprobes.h>
 #include <linux/syscalls.h>
-#include <linux/version.h>
 #include <asm/ptrace.h>
 
 MODULE_LICENSE("GPL");
@@ -69,11 +68,11 @@ static int __init syscall_shroud_init(void) {
     ret += register_kprobe(&kp_ioprio_set);
 
     if (ret < 0) {
-        pr_err("syscall_shroud: failed to register kprobes (%d)\n", ret);
         unregister_kprobe(&kp_ioprio_set);
         unregister_kprobe(&kp_ioprio_get);
         unregister_kprobe(&kp_setpriority);
         unregister_kprobe(&kp_getpriority);
+        pr_err("syscall_shroud: failed to register kprobes\n");
         return ret;
     }
 
