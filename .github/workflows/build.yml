@@ -12,17 +12,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Clone DDK
+    - name: Set up DDK environment
       run: |
-        git clone https://github.com/Ylarod/ddk.git
-        cd ddk
-        ./setup.sh
+        # Install the official ddk script
+        sudo curl -fsSL https://raw.githubusercontent.com/Ylarod/ddk/main/scripts/ddk -o /usr/local/bin/ddk
+        sudo chmod +x /usr/local/bin/ddk
 
     - name: Build kernel module
       run: |
-        export KERNEL_SRC=$GITHUB_WORKSPACE/ddk/linux
-        export KMI=android16-6.12
-        make
+        # Build the module targeting android16-6.12
+        # The ddk script automatically handles pulling the correct Docker image and kernel source
+        ddk build android16-6.12
 
     - name: Prepare module package
       run: |
@@ -30,6 +30,7 @@ jobs:
         cp module.prop module_package/
         cp service.sh module_package/
         cp uninstall.sh module_package/
+        # Copy the built .ko file
         cp syscall_shroud.ko module_package/
         cd module_package
         zip -r ../SyscallShroud.zip *
