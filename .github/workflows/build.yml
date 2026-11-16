@@ -12,11 +12,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Verify Source Files
-      run: |
-        if [ ! -f Makefile ]; then echo "Error: Makefile is missing!"; exit 1; fi
-        if [ ! -f syscall_shroud.c ]; then echo "Error: syscall_shroud.c is missing!"; exit 1; fi
-
     - name: Set up DDK environment
       run: |
         sudo curl -fsSL https://raw.githubusercontent.com/Ylarod/ddk/main/scripts/ddk -o /usr/local/bin/ddk
@@ -24,14 +19,28 @@ jobs:
 
     - name: Build kernel module
       run: |
-        echo "=== Running ddk build with verbose output ==="
-        ddk build android16-6.12 2>&1 | tee build.log
-        echo "=== Build finished, searching for .ko files ==="
-        find . -name "*.ko" -type f
+        # Explicitly build current directory as an external module
+        ddk build android16-6.12 . 2>&1 | tee build.log
         
         if [ ! -f "syscall_shroud.ko" ]; then
           echo "ERROR: syscall_shroud.ko was NOT generated!"
-          echo "=== Last 50 lines of build log ==="
-          tail -n 50 build.log
+          echo "=== Last 100 lines of build log ==="
+          tail -n 100 build.log
           exit 1
         fi
+
+    - name: Prepare module package
+      run: |
+        mkdir -p module_package/ko
+        cp module.prop module_package/
+        cp service.sh module_package/
+        cp uninstall.sh module_package/
+        cp syscall_shroud.ko module_package/ko/
+        cd module_package
+        zip -r ../SyscallShroud.zip *
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SyscallShroud-Module
+        path: SyscallShroud.zip
