@@ -24,32 +24,14 @@ jobs:
 
     - name: Build kernel module
       run: |
-        ddk build android16-6.12
-
-    - name: Prepare module package
-      run: |
-        mkdir -p module_package/ko
-        cp module.prop module_package/
-        cp service.sh module_package/
-        cp uninstall.sh module_package/
-        
-        echo "=== Searching for compiled .ko files ==="
+        echo "=== Running ddk build with verbose output ==="
+        ddk build android16-6.12 2>&1 | tee build.log
+        echo "=== Build finished, searching for .ko files ==="
         find . -name "*.ko" -type f
         
-        echo "=== Copying .ko to package ==="
-        find . -name "*.ko" -type f -exec cp {} module_package/ko/ \;
-        
-        if [ ! -f "module_package/ko/syscall_shroud.ko" ]; then
+        if [ ! -f "syscall_shroud.ko" ]; then
           echo "ERROR: syscall_shroud.ko was NOT generated!"
-          echo "Please check the 'Build kernel module' step logs for compilation errors."
+          echo "=== Last 50 lines of build log ==="
+          tail -n 50 build.log
           exit 1
         fi
-        
-        cd module_package
-        zip -r ../SyscallShroud.zip *
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: SyscallShroud-Module
-        path: SyscallShroud.zip
