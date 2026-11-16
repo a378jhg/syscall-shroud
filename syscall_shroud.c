@@ -3,6 +3,7 @@
 #include <linux/kprobes.h>
 #include <linux/syscalls.h>
 #include <linux/version.h>
+#include <asm/ptrace.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("YourName");
@@ -21,12 +22,12 @@ MODULE_DESCRIPTION("Syscall Shroud - Spoof priority/ioprio syscalls");
 #endif
 
 static int pre_handler_getpriority(struct kprobe *p, struct pt_regs *regs) {
-    regs->regs[0] = 0; // Spoofed return value (normal priority)
-    return 1;          // Skip the original syscall
+    regs->regs[0] = 0;
+    return 1;
 }
 
 static int pre_handler_setpriority(struct kprobe *p, struct pt_regs *regs) {
-    regs->regs[0] = 0; // Pretend success
+    regs->regs[0] = 0;
     return 1;
 }
 
@@ -61,32 +62,15 @@ static struct kprobe kp_ioprio_set = {
 };
 
 static int __init syscall_shroud_init(void) {
-    int ret;
+    int ret = 0;
+    ret += register_kprobe(&kp_getpriority);
+    ret += register_kprobe(&kp_setpriority);
+    ret += register_kprobe(&kp_ioprio_get);
+    ret += register_kprobe(&kp_ioprio_set);
 
-    ret = register_kprobe(&kp_getpriority);
     if (ret < 0) {
-        pr_err("syscall_shroud: failed to register getpriority kprobe (%d)\n", ret);
-        return ret;
-    }
-
-    ret = register_kprobe(&kp_setpriority);
-    if (ret < 0) {
-        pr_err("syscall_shroud: failed to register setpriority kprobe (%d)\n", ret);
-        unregister_kprobe(&kp_getpriority);
-        return ret;
-    }
-
-    ret = register_kprobe(&kp_ioprio_get);
-    if (ret < 0) {
-        pr_err("syscall_shroud: failed to register ioprio_get kprobe (%d)\n", ret);
-        unregister_kprobe(&kp_setpriority);
-        unregister_kprobe(&kp_getpriority);
-        return ret;
-    }
-
-    ret = register_kprobe(&kp_ioprio_set);
-    if (ret < 0) {
-        pr_err("syscall_shroud: failed to register ioprio_set kprobe (%d)\n", ret);
+        pr_err("syscall_shroud: failed to register kprobes (%d)\n", ret);
+        unregister_kprobe(&kp_ioprio_set);
         unregister_kprobe(&kp_ioprio_get);
         unregister_kprobe(&kp_setpriority);
         unregister_kprobe(&kp_getpriority);
