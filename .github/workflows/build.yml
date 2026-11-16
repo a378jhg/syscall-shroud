@@ -8,32 +8,27 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ylarod/ddk:android16-6.12
+      options: --privileged
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up DDK environment
+    - name: Verify source files
       run: |
-        sudo curl -fsSL https://raw.githubusercontent.com/Ylarod/ddk/main/scripts/ddk -o /usr/local/bin/ddk
-        sudo chmod +x /usr/local/bin/ddk
+        if [ ! -f Makefile ]; then echo "Error: Makefile missing"; exit 1; fi
+        if [ ! -f syscall_shroud.c ]; then echo "Error: source file missing"; exit 1; fi
 
     - name: Build kernel module
       run: |
-        # Define the output directory for the build artifacts
-        ODIR="$(realpath .)/out/android16-6.12"
-        mkdir -p "$ODIR"
+        # KERNEL_SRC is pre-configured in the DDK container
+        # KDIR points the external module build to the correct kernel headers
+        make KDIR=$KERNEL_SRC 2>&1 | tee build.log
         
-        # Use the correct ODIR argument for ddk build
-        ddk build android16-6.12 "ODIR=$ODIR" 2>&1 | tee build.log
-        
-        # Search for the .ko file inside the output directory
-        if [ -f "$ODIR/syscall_shroud.ko" ]; then
-          echo "SUCCESS: syscall_shroud.ko found in $ODIR"
-          cp "$ODIR/syscall_shroud.ko" .
-        else
-          echo "ERROR: syscall_shroud.ko was NOT generated in $ODIR"
-          echo "=== Last 100 lines of build log ==="
-          tail -n 100 build.log
+        if [ ! -f "syscall_shroud.ko" ]; then
+          echo "ERROR: .ko not generated"
+          tail -n 50 build.log
           exit 1
         fi
 
