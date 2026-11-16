@@ -27,9 +27,7 @@ jobs:
 
     - name: Prepare module package
       run: |
-        # Install zip utility inside the container
         apt-get update && apt-get install -y zip
-        
         mkdir -p module_package/ko
         cp module.prop module_package/
         cp service.sh module_package/
