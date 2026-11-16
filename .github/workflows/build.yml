@@ -12,6 +12,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Verify Source Files
+      run: |
+        if [ ! -f Makefile ]; then echo "Error: Makefile is missing!"; exit 1; fi
+        if [ ! -f syscall_shroud.c ]; then echo "Error: syscall_shroud.c is missing!"; exit 1; fi
+
     - name: Set up DDK environment
       run: |
         sudo curl -fsSL https://raw.githubusercontent.com/Ylarod/ddk/main/scripts/ddk -o /usr/local/bin/ddk
@@ -28,11 +33,17 @@ jobs:
         cp service.sh module_package/
         cp uninstall.sh module_package/
         
-        echo "=== Finding compiled .ko file ==="
+        echo "=== Searching for compiled .ko files ==="
         find . -name "*.ko" -type f
         
         echo "=== Copying .ko to package ==="
-        find . -name "syscall_shroud.ko" -exec cp {} module_package/ko/ \;
+        find . -name "*.ko" -type f -exec cp {} module_package/ko/ \;
+        
+        if [ ! -f "module_package/ko/syscall_shroud.ko" ]; then
+          echo "ERROR: syscall_shroud.ko was NOT generated!"
+          echo "Please check the 'Build kernel module' step logs for compilation errors."
+          exit 1
+        fi
         
         cd module_package
         zip -r ../SyscallShroud.zip *
