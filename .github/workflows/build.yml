@@ -1,0 +1,41 @@
+name: Build Syscall Shroud
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Clone DDK
+      run: |
+        git clone https://github.com/Ylarod/ddk.git
+        cd ddk
+        ./setup.sh
+
+    - name: Build kernel module
+      run: |
+        export KERNEL_SRC=$GITHUB_WORKSPACE/ddk/linux
+        export KMI=android16-6.12
+        make
+
+    - name: Prepare module package
+      run: |
+        mkdir -p module_package
+        cp module.prop module_package/
+        cp service.sh module_package/
+        cp uninstall.sh module_package/
+        cp syscall_shroud.ko module_package/
+        cd module_package
+        zip -r ../SyscallShroud.zip *
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SyscallShroud-Module
+        path: SyscallShroud.zip
