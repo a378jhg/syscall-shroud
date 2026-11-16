@@ -19,8 +19,12 @@ jobs:
 
     - name: Build kernel module
       run: |
-        # Explicitly build current directory as an external module
-        ddk build android16-6.12 . 2>&1 | tee build.log
+        # Export ODIR to enable separate build dir for Android 16 / kernel 6.12
+        export ODIR="$(realpath .)/out/android16-6.12"
+        mkdir -p "$ODIR"
+        
+        # Build external module explicitly
+        ddk build android16-6.12 "ODIR=$ODIR" 2>&1 | tee build.log
         
         if [ ! -f "syscall_shroud.ko" ]; then
           echo "ERROR: syscall_shroud.ko was NOT generated!"
