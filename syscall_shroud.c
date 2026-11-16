@@ -6,7 +6,7 @@
 #include <asm/ptrace.h>
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("YourName");
+MODULE_AUTHOR("a378jhg");
 MODULE_DESCRIPTION("Syscall Shroud - Spoof priority/ioprio syscalls");
 
 #if defined(CONFIG_ARM64)
