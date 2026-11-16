@@ -1,6 +1,6 @@
 id=syscall-shroud
 name=Syscall Shroud
-version=v1.0.0
-versionCode=1
+version=v1.1.0
+versionCode=2
 author=a378jhg
-description=Spoof getpriority/setpriority/ioprio syscalls safely via kprobes.
+description=Safely spoof getpriority syscalls via kretprobe.
